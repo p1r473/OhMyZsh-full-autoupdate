@@ -46,7 +46,7 @@ The update frequency depends on the Oh My Zsh settings, by default **every 13 da
 
 ## Manual start
 
-If you still need to start the update manually, just type `omz update` for OMZ or `omzupdateplugins` for plugins in the terminal, wait for the Oh My Zsh update to finish and restart the terminal. 😎
+If you still need to start the update manually, just type `omz update` for OMZ or `omzupdatecustom` for plugins and themes in the terminal, wait for the Oh My Zsh update to finish and restart the terminal. 😎
 
 ## License
 
