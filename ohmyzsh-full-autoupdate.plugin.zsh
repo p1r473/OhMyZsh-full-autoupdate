@@ -21,6 +21,37 @@
 
 
 #######################################
+# Manual update alias for custom plugins/themes
+#######################################
+_omz_full_manual_update() {
+  emulate -L zsh
+  local custom="${ZSH_CUSTOM:-$ZSH/custom}"
+  local -a arrayPackages
+  arrayPackages=(${(f)"$(find -L "${custom}" -type d -name ".git" 2>/dev/null)"})
+
+  local package
+  for package in "${arrayPackages[@]}"; do
+    [[ -z "$package" ]] && continue
+
+    local packageDir="${package:h}"
+    local packageName="${packageDir:t}"
+
+    printf 'Updating %s\n' "$packageName"
+
+    if ! git -C "$packageDir" symbolic-ref --short HEAD >/dev/null 2>&1; then
+      printf 'Skipping %s (detached HEAD/tag)\n\n' "$packageName"
+      continue
+    fi
+
+    git -C "$packageDir" pull "$OMZ_FULL_AUTOUPDATE_REMOTE"
+    printf '\n'
+  done
+}
+
+alias omzupdateplugins='_omz_full_manual_update'
+
+
+#######################################
 # Skip if label exists in OMZ cache update file
 #######################################
 typeset -g _omz_update_file="${ZSH_CACHE_DIR:-${HOME}/.cache/zsh}/.zsh-update"
