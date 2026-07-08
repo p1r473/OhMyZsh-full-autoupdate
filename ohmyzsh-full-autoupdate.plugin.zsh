@@ -21,7 +21,7 @@
 
 
 #######################################
-# Manual update alias for custom plugins/themes
+# Manual update alias for custom packages not handled by omz update
 #######################################
 _omz_full_manual_update() {
   emulate -L zsh
@@ -48,7 +48,7 @@ _omz_full_manual_update() {
   done
 }
 
-alias omzupdateplugins='_omz_full_manual_update'
+alias omzupdatecustom='_omz_full_manual_update'
 
 
 #######################################
