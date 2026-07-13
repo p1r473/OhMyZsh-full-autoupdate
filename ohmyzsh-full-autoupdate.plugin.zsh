@@ -18,11 +18,10 @@
 # Config (optional)
 #######################################
 : "${OMZ_FULL_AUTOUPDATE_REMOTE:=origin}"   # remote name to show/pull from
-: "${OMZ_FULL_AUTOUPDATE_JOBS:=4}"          # max parallel git pulls
 
 
 #######################################
-# Manual update alias for custom packages not handled by omz update
+# Manual update command for custom packages not handled by omz update
 #######################################
 typeset -g _omz_full_autoupdate_script="${${(%):-%x}:A}"
 
@@ -40,8 +39,10 @@ alias omzupdatecustom='_omz_full_manual_update'
 #######################################
 typeset -g _omz_update_file="${ZSH_CACHE_DIR:-${HOME}/.cache/zsh}/.zsh-update"
 
-# If our label exists, skip updating plugins and themes
-if [[ -z "$OMZ_FULL_AUTOUPDATE_MANUAL" ]] && [[ -r "$_omz_update_file" ]] && grep -q 'LABEL_FULL_AUTOUPDATE' "$_omz_update_file" 2>/dev/null; then
+# If our label exists, skip updating plugins and themes unless manually requested
+if [[ -z "$OMZ_FULL_AUTOUPDATE_MANUAL" ]] &&
+   [[ -r "$_omz_update_file" ]] &&
+   grep -q 'LABEL_FULL_AUTOUPDATE' "$_omz_update_file" 2>/dev/null; then
   return 0
 fi
 
@@ -151,7 +152,10 @@ _getNameCustomCategory() {
 #######################################
 _savingLabel() {
   emulate -L zsh
+
+  # Manual runs should not modify Oh My Zsh's automatic update cache
   [[ -n "$OMZ_FULL_AUTOUPDATE_MANUAL" ]] && return 0
+
   printf '\n%s\n' 'LABEL_FULL_AUTOUPDATE=true' >> "$_omz_update_file" 2>/dev/null || true
 }
 
@@ -166,21 +170,7 @@ omzFullUpdate() {
   local -a arrayPackages
   arrayPackages=(${(f)"$(find -L "${custom}" -type d -name ".git" 2>/dev/null)"})
 
-  local num_jobs="$OMZ_FULL_AUTOUPDATE_JOBS"
-  if ! [[ "$num_jobs" == <-> ]] || (( num_jobs < 1 )); then
-    num_jobs=1
-  fi
-  if (( num_jobs > 16 )); then
-    num_jobs=16
-  fi
-
-  local restore_monitor=0
-  [[ -o monitor ]] && restore_monitor=1
-  set +m
-
   local package
-  local i=0
-
   for package in "${arrayPackages[@]}"; do
     [[ -z "$package" ]] && continue
 
@@ -197,28 +187,11 @@ omzFullUpdate() {
       continue
     fi
 
-    if (( num_jobs == 1 )); then
-      if ! git -C "$packageDir" pull "$OMZ_FULL_AUTOUPDATE_REMOTE"; then
-        printf '%sError updating %s%s\n' "$colorRed" "$packageName" "$reset"
-      fi
-      printf '\n'
-    else
-      (
-        if ! git -C "$packageDir" pull "$OMZ_FULL_AUTOUPDATE_REMOTE"; then
-          printf '%sError updating %s%s\n' "$colorRed" "$packageName" "$reset"
-        fi
-        printf '\n'
-      ) &
-
-      (( i++ ))
-      if (( i % num_jobs == 0 )); then
-        wait
-      fi
+    if ! git -C "$packageDir" pull "$OMZ_FULL_AUTOUPDATE_REMOTE"; then
+      printf '%sError updating %s%s\n' "$colorRed" "$packageName" "$reset"
     fi
+    printf '\n'
   done
-
-  wait
-  (( restore_monitor )) && set -m
 
   _savingLabel
 }
